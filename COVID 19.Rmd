@@ -1,0 +1,251 @@
+---
+title: "Untitled"
+author: "STA 3040"
+date: "2024-05-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+In this analysis, we will simulate the spread of COVID-19 in Kenya. We will use the SIR (Susceptible, Infected, Recovered) model to analyze the dynamics of the epidemic under a set of given parameters and assess the effectiveness of vaccination strategies. Our objective is to visualize how the disease spreads over time and how interventions, such as vaccination, can alter the epidemic curve.
+
+We will start by outlining the schematic framework of the SIR model, followed by initializing the model parameters and state values. We will then implement the SIR model , solve the differential equations governing the model, and visualize the results. Lastly, we will explore the impact of vaccinating 20% of the population and discuss the effects of increasing the vaccination rate on the number of infected individuals. We will also highlight the significance of the transmission rate and discuss public health interventions that can reduce this rate.
+
+#Question 1
+In this question we will Generate the schematic framework to illustrate the compartments and the rates 
+across different compartments
+Write an R code snippet to initialize the parameters and initial state values for the 
+given COVID-19 scenario in Kenya.
+
+
+```{r}
+#load necessary libraries
+install.packages("deSolve")
+library(deSolve)
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("DiagrammeR")
+library(DiagrammeR)
+
+
+
+```
+We need to load additional packages for this analysis. We require the deSolve package for performing differential equations, tidyverse for data manipulation and analysis, and DiagrammeR for making infographics.
+
+
+
+```{r}
+grViz("digraph flowchart {
+      graph [layout = dot, rankdir = LR]
+      node [fontname = Helvetica, shape = rectangle]
+      tab1 [label = 'Susceptible (S)']
+      tab2 [label = 'Infected (I)']
+      tab3 [label = 'Recovered (R)']
+      tab1 -> tab2 [label = 'beta * S * I / N']
+      tab2 -> tab3 [label = 'gamma * I']
+      tab2 -> tab1 [style = invis]
+      tab3 -> tab1 [style = invis]
+      }
+      ")
+
+```
+The provided code uses the grViz function from the DiagrammeR package in R to create a simple flowchart showing the SIR model for COVID-19. It has three nodes: Susceptible (S), Infected (I), and Recovered (R). Arrows between the nodes represent transitions: people move from Susceptible to Infected at a rate of beta * S * I / N, and from Infected to Recovered at a rate of gamma * I. This visual helps us easily understand how the disease spreads and recovers within the population.
+
+Now we will initialize the parameters and initial state values 
+
+
+```{r}
+# Parameters
+population_size <- 50000000
+initial_infected <- 500
+initial_recovered <- 0
+duration_of_infectiousness <- 10
+transmission_rate <- 0.3
+recovery_rate <- 1 / duration_of_infectiousness
+simulation_period <- 180
+
+# Initial State Values
+initial_susceptible <- population_size - initial_infected - initial_recovered
+initial_state_values <- c(S = initial_susceptible, I = initial_infected, R = initial_recovered)
+
+# Parameters for the Model
+parameters <- c(beta = transmission_rate, gamma = recovery_rate)
+times <- seq(from = 0, to = simulation_period, by = 1)
+
+```
+In this code I have setup the parameters which were already provided .
+
+Next we set up initial state valuesWe're calculating the initial number of susceptible individuals (initial_susceptible) by subtracting the initial number of infected and recovered individuals from the total population size. 
+Then, we're creating a vector initial_state_values containing the initial counts of susceptible (S), infected (I), and recovered (R) individuals.
+
+Next we create vector of parameters containing transmission and recovery rate
+
+Next we generate a sequence of time points (times) from 0 to the end of the simulation period, with intervals of 1 day.
+
+#QUESTION 2
+In this question we implement SIR model and solve model equations over 180 days.Next we explain the role of each parameter and it's influence on the epidemic
+
+
+
+```{r}
+# SIR Model Function
+sir_model <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), {
+    N <- S + I + R
+    lambda <- beta * I / N
+    dS <- -lambda * S
+    dI <- lambda * S - gamma * I
+    dR <- gamma * I
+    return(list(c(dS, dI, dR)))
+  })
+}
+sir_model
+# Solving the Model
+output <- as.data.frame(ode(y = initial_state_values, times = times, func = sir_model, parms = parameters))
+output
+output
+
+```
+In this code, we're creating a function called sir_model to simulate how COVID-19 spreads using the SIR model.  The function uses the current time, the current state (number of susceptible, infected, and recovered people), and some parameters like how easily the virus spreads and how quickly people recover. . Then, we use the ode function(differential equations) to solve these equations and get the expected number of susceptible, infected, and recovered individuals at each time point. The output, stored in the output dataframe, shows us how the epidemic evolves over time, giving us insights into the spread and impact of COVID-19 in the population.
+
+Observation
+ Initially, there are 500 infected individuals and almost the entire population is susceptible. As time progresses, the number of infected individuals increases, while the number of susceptible individuals decreases. Eventually, as infected individuals recover, the number of recovered individuals starts to rise.
+ 
+ Parameters
+ Beta (Transmission Rate): Determines how quickly the disease spreads. A higher β results in more rapid transmission of the disease.
+ 
+Gamma (Recovery Rate): Represents the rate at which infected individuals recover. It is the reciprocal of the duration of infectiousness (1/10 days).
+
+#QUESTION THREE
+In this question we will create a line plot showing the number of susceptible, infected, recovered, and vaccinated individuals over time for the model implemented.
+
+```{r}
+# Transforming Data to Tidy Format
+dat <- output %>% pivot_longer(cols = c(S, I, R), names_to = "state", values_to = "value")
+dat
+
+# Plotting the Dynamics
+dat %>% ggplot(aes(x = time, y = value, color = state, group = state)) +
+  geom_line() +
+  xlab("Time (Days)") +
+  ylab("Number of Persons") +
+  labs(title = "Dynamics of COVID-19 Epidemic in Kenya", color = "Compartment") +
+  theme_minimal()
+
+
+```
+
+From the graph ;Susceptible (S) Line:
+
+Early Phase: Decreases slowly at first.
+
+Middle Phase: Declines more rapidly as infections increase.
+
+Late Phase: Levels off at a lower value, indicating fewer people remain susceptible.
+
+Infected (I) Line:
+Early Phase: Rises sharply due to high transmission.
+Peak Phase: Reaches a peak when the infection rate balances with the recovery rate.
+Late Phase: Declines as more individuals recover and fewer are susceptible.
+
+Recovered (R) Line:
+Early Phase: Increases as infected individuals recover.
+Middle Phase: Continues to rise steadily.
+Late Phase: Plateaus at a high value, representing the total number of recoveries.
+
+the peak of the infected line marks a critical turning point where the epidemic begins to decline, highlighted by the convergence of the declining S line and the rising R line.
+
+#QUESTION 4
+Now we will add intervention of vaccination of 20% of the population,how the vaccination rate affects the epidemic curve
+
+Double vaccination rate and record observations, and importance of transmission rate (𝛽) and how public health 
+interventions could reduce this rate
+
+```{r}
+# Parameters for Vaccination
+vaccination_coverage <- 0.2
+initial_susceptible_vacc <- (1 - vaccination_coverage) * population_size
+initial_recovered_vacc <- vaccination_coverage * population_size
+initial_state_values_vacc <- c(S = initial_susceptible_vacc, I = initial_infected, R = initial_recovered_vacc)
+
+# Solving the Model with Vaccination
+output_vacc <- as.data.frame(ode(y = initial_state_values_vacc, times = times, func = sir_model, parms = parameters))
+output_vacc
+
+# Transforming Data to Tidy Format
+dat_vacc <- output_vacc %>% pivot_longer(cols = c(S, I, R), names_to = "state", values_to = "value")
+dat_vacc
+
+# Plotting the Dynamics with Vaccination
+dat_vacc %>% ggplot(aes(x = time, y = value, color = state, group = state)) +
+  geom_line() +
+  xlab("Time (Days)") +
+  ylab("Number of Persons") +
+  labs(title = "Impact of 20% Vaccination Coverage on COVID-19 Epidemic in Kenya", color = "Compartment") +
+  theme_minimal()
+
+
+```
+the code simulates the impact of a 20% vaccination coverage on the spread of COVID-19 using an SIR model.
+We set the vaccination coverage to 20%, reducing the initial susceptible population to 80% of the total, while the vaccinated individuals are considered recovered. 
+
+The SIR model is then solved with these new initial conditions over a period of 180 days using the same transmission and recovery rates.
+
+The output is transformed into a tidy format for easier visualization, allowing us to observe how the number of susceptible, infected, and recovered individuals changes over time due to vaccination
+
+With 20% of the population vaccinated, the number of susceptible individuals (S) starts lower and decreases more gradually. The infected population (I) reaches a lower peak and declines more rapidly compared to a scenario without vaccination, indicating that the spread of the virus is slower and less intense. The recovered population (R) rises sharply at the beginning due to the initial vaccinated individuals and continues to grow as more people recover from the infection. Overall, the vaccination coverage flattens the epidemic curve, leading to fewer total infections and reducing the burden on the healthcare system.
+
+Now we will double the vaccination rate
+```{r}
+# Parameters for Increased Vaccination
+vaccination_coverage_high <- 0.4
+initial_susceptible_high_vacc <- (1 - vaccination_coverage_high) * population_size
+initial_susceptible_high_vacc
+initial_recovered_high_vacc <- vaccination_coverage_high * population_size
+initial_recovered_high_vacc
+initial_state_values_high_vacc <- c(S = initial_susceptible_high_vacc, I = initial_infected, R = initial_recovered_high_vacc)
+initial_state_values_high_vacc
+
+# Solving the Model with Increased Vaccination
+output_high_vacc <- as.data.frame(ode(y = initial_state_values_high_vacc, times = times, func = sir_model, parms = parameters))
+output_high_vacc
+
+# Transforming Data to Tidy Format
+dat_high_vacc <- output_high_vacc %>% pivot_longer(cols = c(S, I, R), names_to = "state", values_to = "value")
+dat_high_vacc
+# Plotting the Dynamics with Increased Vaccination
+dat_high_vacc %>% ggplot(aes(x = time, y = value, color = state, group = state)) +
+  geom_line() +
+  xlab("Time (Days)") +
+  ylab("Number of Persons") +
+  labs(title = "Impact of 40% Vaccination Coverage on COVID-19 Epidemic in Kenya", color = "Compartment") +
+  theme_minimal()
+
+```
+We have now doubled the vaccination rate and compare it with 20%
+
+Susceptible (S): Starts lower due to higher initial vaccination. The number of susceptible individuals decreases more slowly and to a lesser extent.
+
+Infected (I): Peaks lower and earlier, showing a less intense and shorter outbreak. The number of infected individuals is significantly reduced.
+
+Recovered (R): Increases sharply at the beginning due to the higher initial number of vaccinated individuals and continues to grow as the epidemic progresses. The total number of recovered individuals is lower compared to the 20% vaccination scenario because fewer people get infected overall.
+
+S and R converge towards the end of the epidemic, not when I is at its peak, because the majority of susceptible individuals have either been infected and recovered or remained uninfected due to reduced transmission. At the peak of I, infections are still spreading, so S is rapidly decreasing while R is increasing, but they don't converge until the epidemic wanes and new infections are minimal.
+
+Importance of the transmission rate (𝛽) and how public health 
+interventions could reduce this rate
+
+Vaccination Rate: Increasing the vaccination rate reduces the number of susceptible individuals, thereby lowering the peak of infections and shortening the duration of the epidemic.
+
+Transmission Rate (Beta): Reducing the transmission rate through public health measures such as social distancing, mask-wearing, and hygiene practices can significantly slow the spread of the disease and flatten the epidemic curve.
+ 
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
