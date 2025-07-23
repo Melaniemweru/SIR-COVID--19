@@ -47,3 +47,21 @@ sir_model <- function(time, state, parameters) {
 
 output <- as.data.frame(ode(y = initial_state_values, times = times, func = sir_model, parms = parameters))
 
+### 💉 Impact of 40% Vaccination
+
+The following R code simulates the effect of increasing vaccination coverage to 40% of the population. Vaccinated individuals are moved to the "Recovered" compartment at the beginning of the simulation.
+
+```r
+vaccination_coverage_high <- 0.4
+initial_susceptible_high_vacc <- (1 - vaccination_coverage_high) * population_size
+initial_recovered_high_vacc <- vaccination_coverage_high * population_size
+initial_state_values_high_vacc <- c(S = initial_susceptible_high_vacc, I = initial_infected, R = initial_recovered_high_vacc)
+
+output_high_vacc <- as.data.frame(ode(
+  y = initial_state_values_high_vacc,
+  times = times,
+  func = sir_model,
+  parms = parameters
+))
+
+
