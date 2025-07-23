@@ -64,41 +64,4 @@ output_high_vacc <- as.data.frame(ode(
   parms = parameters
 ))
 
-## 🧗 Challenges Faced, How I Solved Them & Lessons Learned
-
-<details>
-<summary><strong>Challenge 1: Handling Stiff Differential Equation Syntax in R</strong></summary>
-
-- **Problem**: I initially struggled with setting up the `ode()` function from the `deSolve` package due to unfamiliar syntax and the strict format it requires for model functions.  
-- **Solution**: I studied examples from official documentation and simplified the `sir_model` function using `with(as.list(...))`.  
-- **Lesson Learned**: Understanding how to break down complex functions into smaller logical steps makes debugging much easier and improves comprehension of dynamic systems.
-
-</details>
-
-<details>
-<summary><strong>Challenge 2: Plot Rendering Issues in RMarkdown</strong></summary>
-
-- **Problem**: Some `ggplot2` plots wouldn't render in RMarkdown.  
-- **Solution**: Adjusted code chunk settings and reshaped the data using `pivot_longer()`.  
-- **Lesson Learned**: Clean chunk setup and tidy data are key to effective reporting in RMarkdown.
-
-</details>
-
-<details>
-<summary><strong>Challenge 3: Comparing Multiple Vaccination Scenarios</strong></summary>
-
-- **Problem**: Difficult to interpret results across separate plots.  
-- **Solution**: Combined plots using `facet_wrap()` and labeled scenarios.  
-- **Lesson Learned**: Visual storytelling improves interpretability and communication.
-
-</details>
-
-<details>
-<summary><strong>Challenge 4: Interpreting Parameters (Beta & Gamma)</strong></summary>
-
-- **Problem**: Translating β and γ into public health terms was challenging.  
-- **Solution**: Simulated varying transmission rates and interpreted resulting curve shapes.  
-- **Lesson Learned**: Experimenting with parameter values bridges the gap between math and real-world application.
-
-</details>
 
